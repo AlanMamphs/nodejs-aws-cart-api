@@ -1,4 +1,5 @@
-import { Cart, CartItem } from '../models';
+import { Cart } from '../entities/cart.entity';
+import { CartItem } from '../entities/cartItem.entity';
 
 /**
  * @param {Cart} cart
