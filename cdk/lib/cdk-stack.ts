@@ -4,7 +4,7 @@ import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as iam from 'aws-cdk-lib/aws-iam';
-import { Vpc } from 'aws-cdk-lib/aws-ec2';
+import { Vpc, SecurityGroup } from 'aws-cdk-lib/aws-ec2';
 import { join } from 'path';
 import { readFileSync } from 'fs';
 
@@ -34,6 +34,12 @@ export class CdkStack extends cdk.Stack {
       vpcId: 'vpc-0fcadc69f2c1c254a',
     });
 
+    const sg = SecurityGroup.fromLookupById(
+      this,
+      'lambda-rds-sg',
+      'sg-0f3b2c5a843ecd099',
+    );
+
     const cartAPILambda = new NodejsFunction(this, 'cartAPILambda', {
       entry: join(__dirname, '..', '..', 'dist', 'lambda.js'),
       functionName: 'cartLambda',
@@ -52,6 +58,7 @@ export class CdkStack extends cdk.Stack {
         DB_USERNAME: process.env.DB_USERNAME ?? '',
         DB_PASSWORD: process.env.DB_PASSWORD ?? '',
       },
+      securityGroups: [sg],
       vpc: DefaultVpc,
       depsLockFilePath: join(__dirname, '..', '..', 'package-lock.json'),
     });
