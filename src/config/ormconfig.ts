@@ -16,7 +16,13 @@ const config: TypeOrmModuleOptions = {
   synchronize: false,
   entities: ['dist/**/*.entity{.ts,.js}'],
   migrations: ['dist/migrations/*{.ts,.js}'],
-  migrationsRun: true
+  migrationsRun: true,
+  ssl: true,
+  extra: {
+    ssl: {
+      "rejectUnauthorized": false
+    }
+  }
 };
 
 export default registerAs('database', () => config);

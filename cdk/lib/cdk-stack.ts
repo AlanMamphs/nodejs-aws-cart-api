@@ -3,6 +3,8 @@ import { Construct } from 'constructs';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
+import * as iam from 'aws-cdk-lib/aws-iam';
+import { Vpc } from 'aws-cdk-lib/aws-ec2';
 import { join } from 'path';
 import { readFileSync } from 'fs';
 
@@ -28,17 +30,37 @@ export class CdkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
+    const DefaultVpc = Vpc.fromLookup(this, 'VPC', {
+      vpcId: 'vpc-0fcadc69f2c1c254a',
+    });
+
     const cartAPILambda = new NodejsFunction(this, 'cartAPILambda', {
-      entry: join(__dirname, '..', '..', 'dist', 'src', 'lambda.js'),
+      entry: join(__dirname, '..', '..', 'dist', 'lambda.js'),
       functionName: 'cartLambda',
       runtime: Runtime.NODEJS_18_X,
       timeout: cdk.Duration.seconds(30),
       bundling: {
-        nodeModules: getDependenciesList(join(__dirname, '..', '..', 'package.json')),
+        nodeModules: getDependenciesList(
+          join(__dirname, '..', '..', 'package.json'),
+        ),
       },
-      environment: {},
+      allowPublicSubnet: true,
+      environment: {
+        DB_HOST: process.env.DB_HOST ?? '',
+        DB_PORT: process.env.DB_PORT ?? '',
+        DB_NAME: process.env.DB_NAME ?? '',
+        DB_USERNAME: process.env.DB_USERNAME ?? '',
+        DB_PASSWORD: process.env.DB_PASSWORD ?? '',
+      },
+      vpc: DefaultVpc,
       depsLockFilePath: join(__dirname, '..', '..', 'package-lock.json'),
     });
+
+    cartAPILambda.role?.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName(
+        'service-role/AWSLambdaVPCAccessExecutionRole',
+      ),
+    );
 
     const cartAPILambdaIntegration = new apigw.LambdaIntegration(cartAPILambda);
     // Create an API Gateway resource for each of the CRUD operations
