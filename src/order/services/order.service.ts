@@ -1,39 +1,65 @@
 import { Injectable } from '@nestjs/common';
-import { v4 } from 'uuid';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, DataSource } from 'typeorm';
 
-import { Order } from '../models';
+import { Order, OrderStatus } from '../entities/order.entity';
+import { Cart, CartStatus } from '../../cart/entities/cart.entity';
+import { User } from '../../users/entities/user.entity';
 
 @Injectable()
 export class OrderService {
-  private orders: Record<string, Order> = {}
+  constructor(
+    @InjectRepository(Order)
+    private orders: Repository<Order>,
 
-  findById(orderId: string): Order {
-    return this.orders[ orderId ];
+    private dataSource: DataSource,
+  ) {}
+
+  findById(orderId: string) {
+    return this.orders.findOneBy({ id: orderId });
   }
 
-  create(data: any) {
-    const id = v4()
-    const order = {
-      ...data,
-      id,
-      status: 'inProgress',
+  async listOrders() {
+    return this.orders.find();
+  }
+
+  async checkout(data: {
+    cart: Cart;
+    orderDetails: {
+      address: Record<string, string>;
+      total: number;
     };
+  }) {
+    const { total, address: delivery } = data.orderDetails;
+    await this.dataSource.transaction(async (manager) => {
+      await manager.save(
+        this.orders.create({
+          delivery,
+          total: total,
+          user: data.cart.user,
+          cart: data.cart,
+          status: OrderStatus.PROCESSING,
+        }),
+      );
 
-    this.orders[ id ] = order;
+      await manager.update(Cart, data.cart.id, {
+        status: CartStatus.ORDERED,
+      });
 
-    return order;
+      await manager.update(User, data.cart.user.id, {
+        name: `${delivery.firstname} ${delivery.lastname}`,
+        shipping: delivery.address,
+      });
+    });
   }
 
-  update(orderId, data) {
-    const order = this.findById(orderId);
+  async update(orderId: string, data: Order) {
+    const order = await this.findById(orderId);
 
     if (!order) {
       throw new Error('Order does not exist.');
     }
 
-    this.orders[ orderId ] = {
-      ...data,
-      id: orderId,
-    }
+    return this.orders.update(orderId, data);
   }
 }

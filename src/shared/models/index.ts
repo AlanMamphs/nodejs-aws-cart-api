@@ -1,6 +1,6 @@
-import { Request } from 'express';
+import type { Request } from 'express';
 
-import { User } from '../../users';
+import type { User } from '../../users';
 
 export interface AppRequest extends Request {
   user?: User
