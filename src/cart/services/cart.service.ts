@@ -2,25 +2,35 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { Cart as CartEntity, CartStatus } from '../entities/cart.entity';
+import { Cart, CartStatus } from '../entities/cart.entity';
+import { CartItem } from '../entities/cartItem.entity';
 
 @Injectable()
 export class CartService {
   constructor(
-    @InjectRepository(CartEntity)
-    private userCarts: Repository<CartEntity>,
+    @InjectRepository(Cart)
+    private userCarts: Repository<Cart>,
+    @InjectRepository(CartItem)
+    private cartItems: Repository<CartItem>,
   ) {}
 
-  findByUserId(userId: string): Promise<CartEntity | null> {
-    return this.userCarts.findOneBy({ user_id: userId });
+  async findByUserId(userId: string): Promise<Cart | null> {
+    const cart = await this.userCarts.findOneBy({ user_id: userId });
+
+    if (!cart) {
+      return null;
+    }
+    return cart;
   }
 
-  createByUserId(userId: string) {
-    return this.userCarts.create({ user_id: userId, items: [] });
+  async createByUserId(userId: string) {
+    return this.userCarts.save(
+      this.userCarts.create({ user_id: userId, items: [] }),
+    );
   }
 
   async findOrCreateByUserId(userId: string) {
-    const userCart = this.findByUserId(userId);
+    const userCart = await this.findByUserId(userId);
 
     if (userCart) {
       return userCart;
@@ -29,20 +39,38 @@ export class CartService {
     return this.createByUserId(userId);
   }
 
-  async updateByUserId(userId: string, { items }) {
-    const { id, ...rest } = await this.findOrCreateByUserId(userId);
+  async updateByUserId(userId: string, params: { status: string; items: [] }) {
+    console.log(params);
+    const { id, items, ...rest } = await this.findOrCreateByUserId(userId);
 
-    const updatedCart = {
-      id,
-      ...rest,
-      items: [...items],
-    };
+    await this.userCarts.update(id, rest);
 
-    await this.userCarts.update(id, {
-      items,
-    });
+    return { id, items: params.items, ...rest };
+  }
 
-    return { ...updatedCart };
+  async addItemToCart(
+    userId: string,
+    params: {
+      product: {
+        price: number;
+        id: string;
+        description: string;
+        title: string;
+      };
+      count: number;
+    },
+  ) {
+    const cart = await this.findOrCreateByUserId(userId);
+
+    const cartItem = await this.cartItems.save(
+      this.cartItems.create({
+        cart,
+        count: params.count,
+        product: params.product,
+      }),
+    );
+
+    return { ...cart, items: [...cart.items, cartItem] };
   }
 
   async removeByUserId(userId: string) {
