@@ -1,4 +1,3 @@
-// order.entity.ts
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -16,22 +15,12 @@ export enum OrderStatus {
   CANCELED = 'CANCELED',
 }
 
-@Entity()
+@Entity('orders')
 export class Order {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'uuid' })
-  user_id: string;
-
-  @ManyToOne(() => User)
-  @JoinColumn({ name: 'user_id' })
-  user: User;
-
-  @Column({ type: 'uuid' })
-  cart_id: string;
-
-  @ManyToOne(() => Cart)
+  @ManyToOne(() => Cart, { eager: true })
   @JoinColumn({ name: 'cart_id' })
   cart: Cart;
 
@@ -41,12 +30,13 @@ export class Order {
   @Column({ type: 'json', nullable: true })
   delivery: Record<string, any>;
 
-  @Column({ type: 'text', nullable: true })
-  comments: string;
-
   @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.PENDING })
   status: OrderStatus;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   total: number;
+
+  @ManyToOne(() => User, (user) => user.id, { eager: true })
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 }

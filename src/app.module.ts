@@ -14,11 +14,12 @@ import databaseConfig from './config/ormconfig';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [databaseConfig]
+      load: [databaseConfig],
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => (configService.get('database'))
+      useFactory: async (configService: ConfigService) =>
+        configService.get('database'),
     }),
     AuthModule,
     CartModule,
@@ -28,5 +29,3 @@ import databaseConfig from './config/ormconfig';
   providers: [],
 })
 export class AppModule {}
-
-console.log(process.env.DB_CONNECT_STRING);

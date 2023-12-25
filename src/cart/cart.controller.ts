@@ -39,7 +39,7 @@ export class CartController {
   }
 
   // @UseGuards(JwtAuthGuard)
-  // @UseGuards(BasicAuthGuard)
+  @UseGuards(BasicAuthGuard)
   @Put()
   async updateUserCart(@Req() req: AppRequest, @Body() body) {
     // TODO: validate body payload...
@@ -59,7 +59,7 @@ export class CartController {
   }
 
   // @UseGuards(JwtAuthGuard)
-  // @UseGuards(BasicAuthGuard)
+  @UseGuards(BasicAuthGuard)
   @Delete()
   clearUserCart(@Req() req: AppRequest) {
     this.cartService.removeByUserId(getUserIdFromRequest(req));
@@ -71,7 +71,7 @@ export class CartController {
   }
 
   // @UseGuards(JwtAuthGuard)
-  // @UseGuards(BasicAuthGuard)
+  @UseGuards(BasicAuthGuard)
   @Post('checkout')
   async checkout(@Req() req: AppRequest, @Body() body) {
     const userId = getUserIdFromRequest(req);
@@ -87,16 +87,11 @@ export class CartController {
       };
     }
 
-    const { id: cartId, items } = cart;
     const total = calculateCartTotal(cart);
-    const order = this.orderService.create({
-      ...body, // TODO: validate and pick only necessary data
-      userId,
-      cartId,
-      items,
-      total,
+    const order = this.orderService.checkout({
+      orderDetails: { ...body, total }, // TODO: validate and pick only necessary data
+      cart,
     });
-    this.cartService.removeByUserId(userId);
 
     return {
       statusCode: HttpStatus.OK,

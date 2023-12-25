@@ -5,8 +5,11 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { CartItem } from './cartItem.entity';
+import { User } from '../../users/entities/user.entity';
 
 export enum CartStatus {
   OPEN = 'OPEN',
@@ -36,4 +39,8 @@ export class Cart {
 
   @OneToMany(() => CartItem, (cartItem) => cartItem.cart, { eager: true })
   items: CartItem[];
+
+  @ManyToOne(() => User, (user) => user.id, { eager: true })
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 }

@@ -3,7 +3,6 @@ import {
   Column,
   PrimaryGeneratedColumn,
   ManyToOne,
-  OneToOne,
   JoinColumn,
 } from 'typeorm';
 import { Cart } from './cart.entity';
@@ -23,6 +22,9 @@ export class CartItem {
     description: string;
     title: string;
   };
+
+  @Column()
+  productId: string;
 
   @ManyToOne(() => Cart, (cart) => cart.items)
   @JoinColumn({ name: 'cart_id' })
