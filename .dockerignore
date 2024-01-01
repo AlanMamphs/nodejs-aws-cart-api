@@ -1,0 +1,13 @@
+# Docker related files should be excluded
+Dockerfile
+.dockerignore
+# production required modules are build within Dockerfile
+node_modules
+# local debug-log
+npm-debug.log
+# production ready dist is built within Dockerfile
+dist
+# cdk is not used for ebs
+cdk
+# We don't run validations and tests
+test
